@@ -1,0 +1,52 @@
+cmake_minimum_required(VERSION 3.15)
+project(c-style-cast-checker)
+
+find_package(LLVM REQUIRED CONFIG)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+
+include_directories(${LLVM_INCLUDE_DIRS})
+link_directories(${LLVM_LIBRARY_DIRS})
+
+set(LIBS
+    clangAST
+    clangASTMatchers
+    clangAnalysis
+    clangBasic
+    clangDriver
+    clangEdit
+    clangFrontend
+    clangFrontendTool
+    clangLex
+    clangParse
+    clangSema
+    clangEdit
+    clangRewrite
+    clangRewriteFrontend
+    clangStaticAnalyzerFrontend
+    clangStaticAnalyzerCheckers
+    clangStaticAnalyzerCore
+    clangSerialization
+    clangToolingCore
+    clangTooling
+    clangFormat
+    LLVMScalarOpts
+    LLVMInstCombine
+    LLVMTransformUtils
+    LLVMAnalysis
+    LLVMTarget
+    LLVMOption # Support
+    LLVMMCParser # MC, Support
+    LLVMMC # Object, Support
+    LLVMObject # BitReader, Core, Support
+    LLVMBitReader # Core, Support
+    LLVMCore # Support
+    LLVMSupport
+    )
+
+add_executable(${PROJECT_NAME} main.cpp)
+add_executable(test test/test.cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBS} ${LIBS})
