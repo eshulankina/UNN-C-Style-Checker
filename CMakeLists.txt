@@ -53,5 +53,5 @@ if (${_llvm_frontendOpenMP} GREATER -1)
 endif()
 
 add_executable(${PROJECT_NAME} main.cpp)
-add_executable(test test/test.cpp)
+add_executable(test_app test/test.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBS} ${LIBS})
