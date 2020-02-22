@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.10)
 project(c-style-cast-checker)
 
 find_package(LLVM REQUIRED CONFIG)
@@ -46,6 +46,11 @@ set(LIBS
     LLVMCore # Support
     LLVMSupport
     )
+
+list(FIND LLVM_AVAILABLE_LIBS "LLVMFrontendOpenMP" _llvm_frontendOpenMP)
+if (${_llvm_frontendOpenMP} GREATER -1)
+    list(APPEND LIBS LLVMFrontendOpenMP)
+endif()
 
 add_executable(${PROJECT_NAME} main.cpp)
 add_executable(test test/test.cpp)
