@@ -63,7 +63,7 @@ make -j8
 
 Запускаем
 ```
-./c-style-checker ../test/test.cpp
+./c-style-checker ../test/test.cpp --extra-arg=-I/home/<your-root-name>/compiler-course/llvm-project/llvm/build/lib/clang/<version>include/
 ```
 
 Вам необходимо дописать свой код в `main.cpp` чтобы утилита смогла заменить все преобразования типов в стиле си на соответствующий им аналог из с++
