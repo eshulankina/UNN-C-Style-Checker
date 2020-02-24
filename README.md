@@ -80,5 +80,11 @@ make -j8
     ```
 3. Перейдите на github и откройте `pull request` из вашей ветки в `master` главного репозитория
 
-Если необходимо что то исправить после создания `pull request` нужно просто сделать изменения и повторить шаги 1 и 2
+Если необходимо что то исправить после создания `pull request` нужно просто сделать изменения и повторить шаги 1 и 2.
 Не нужно открывать новый `pull request`
+
+### Полезные ссылки
+* [Усложненная реализация данной задачи](https://github.com/llvm-mirror/clang-tools-extra/blob/master/clang-tidy/google/AvoidCStyleCastsCheck.cpp)
+* [Матчеры которые есть в clang](https://clang.llvm.org/docs/LibASTMatchersReference.html)
+* [Сборка LLVM](https://llvm.org/docs/CMake.html)
+
