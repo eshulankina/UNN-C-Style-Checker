@@ -1,3 +1,8 @@
+## Telegram chat
+
+https://t.me/unncompilercourse
+
+
 ## Установка окружения
 ### Windows 10
 Вам потребуется установить `WSL`. Для этого нужно следовать   [инструкции](https://docs.microsoft.com/ru-ru/windows/wsl/install-win10).      
