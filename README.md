@@ -1,7 +1,7 @@
 ## Telegram chat
 
-https://t.me/unncompilercourse  
-![qr-telega](https://user-images.githubusercontent.com/22346834/75149496-339ace80-5713-11ea-8030-a67df1ca1b81.png)
+https://t.me/joinchat/GRwjklbJOuYz6a2pY8SWeQ
+![qr-telega](https://drive.google.com/open?id=1grSqIRlwjFj6z8KL0VUuYF8XFTXgrAWS)
 
 ## Установка окружения
 ### Windows 10
