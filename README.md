@@ -1,7 +1,6 @@
 ## Telegram chat
 
 https://t.me/joinchat/GRwjklbJOuYz6a2pY8SWeQ
-![qr-telega](https://drive.google.com/open?id=1grSqIRlwjFj6z8KL0VUuYF8XFTXgrAWS)
 
 ## Установка окружения
 ### Windows 10
