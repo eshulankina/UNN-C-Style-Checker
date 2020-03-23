@@ -60,13 +60,46 @@ cmake ../ -DLLVM_DIR=~/compiler-course/workspace/llvm-project/llvm/build/install
 make -j8
 ```
 
-Запускаем
+В задаче нужно реализовать  с помощью интерфейса clang, `tool`, который будет находить в исходном коде программы все приведения типов в стиле си и заменять их на соответсвующий аналог из с++
+Пример:
+```
+double d = 4.5
+int i = (int)d; // int i = static_cast<int>(d);
+```
+
+Для замены исходного кода программы будет пользоваться классом  [Rewriter](https://clang.llvm.org/doxygen/classclang_1_1Rewriter.html)
+
+Вам нужно будет дописать код в класс `CastCallBack`,  который отвечает за действие, которое нужно совершить при нахождении узла `cStyleCastExpr` в `AST`.  В данном случае мы хотим понять тип преобразования и заменить исходный код с помощью `Rewriter`.
+```
+class CastCallBack : public MatchFinder::MatchCallback {
+public:
+	CastCallBack(Rewriter& rewriter) {
+		// Your code goes here
+	};
+
+	virtual void run(const MatchFinder::MatchResult &Result) {
+		// Your code goes here
+	}
+}
+```
+Подробнее о том как достать всю необходимую информацию из `MatchFinder::MatchResult` можно посмотреть в файле tool.cpp.
+
+После того как вы реализуете `CastCallBack` , пересоберите проект и запустите.   
 ```
 ./c-style-checker ../test/test.cpp --extra-arg=-I/home/<your-root-name>/compiler-course/llvm-project/llvm/build/lib/clang/<version>include/
 ```
 
-Вам необходимо дописать свой код в `main.cpp` чтобы утилита смогла заменить все преобразования типов в стиле си на соответствующий им аналог из с++
+Если вы все реализовали правильно, то вы увидите на экране
+```
+#include <iostream>
+int main() {
+	float f;
+	int i = static_cast<int>(f);
+	return 0;
+}
+```
 
+### Отправка решения
 После того как вы сделали заданиe:
 1. Сделайте коммит:
     ```
@@ -81,6 +114,7 @@ make -j8
 
 Если необходимо что то исправить после создания `pull request` нужно просто сделать изменения и повторить шаги 1 и 2.
 Не нужно открывать новый `pull request`
+
 
 ### Полезные ссылки
 * [Усложненная реализация данной задачи](https://github.com/llvm-mirror/clang-tools-extra/blob/master/clang-tidy/google/AvoidCStyleCastsCheck.cpp)
