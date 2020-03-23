@@ -67,7 +67,7 @@ double d = 4.5
 int i = (int)d; // int i = static_cast<int>(d);
 ```
 
-Для замены исходного кода программы будет пользоваться классом  [Rewriter](https://clang.llvm.org/doxygen/classclang_1_1Rewriter.html)
+Для замены исходного кода программы будем пользоваться классом  [Rewriter](https://clang.llvm.org/doxygen/classclang_1_1Rewriter.html)
 
 Вам нужно будет дописать код в класс `CastCallBack`,  который отвечает за действие, которое нужно совершить при нахождении узла `cStyleCastExpr` в `AST`.  В данном случае мы хотим понять тип преобразования и заменить исходный код с помощью `Rewriter`.
 ```
