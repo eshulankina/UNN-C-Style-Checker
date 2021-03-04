@@ -1,7 +1,3 @@
-## Telegram chat
-
-https://t.me/joinchat/GRwjklbJOuYz6a2pY8SWeQ
-
 ## Установка окружения
 ### Windows 10
 Вам потребуется установить `WSL`. Для этого нужно следовать   [инструкции](https://docs.microsoft.com/ru-ru/windows/wsl/install-win10).      
