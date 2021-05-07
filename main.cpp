@@ -2,6 +2,7 @@
 #include <sstream>
 
 #include <llvm/Support/CommandLine.h>
+#include <llvm/Support/Error.h>
 
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/ASTMatchers/ASTMatchers.h>
@@ -63,9 +64,8 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    CommonOptionsParser OptionsParser(argc, argv, CastMatcherCategory);
-    ClangTool Tool(OptionsParser.getCompilations(),
-            OptionsParser.getSourcePathList());
+    auto parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
 
+    ClangTool Tool(parser.getCompilations(), parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
 }

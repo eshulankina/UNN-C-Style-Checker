@@ -82,18 +82,18 @@ class CastCallBack : public MatchFinder::MatchCallback {
 public:
 	CastCallBack(Rewriter& rewriter) {
 		// Your code goes here
-	};
+	}
 
 	virtual void run(const MatchFinder::MatchResult &Result) {
 		// Your code goes here
 	}
-}
+};
 ```
 Подробнее о том как достать всю необходимую информацию из `MatchFinder::MatchResult` можно посмотреть в файле tool.cpp.
 
 После того как вы реализуете `CastCallBack` , пересоберите проект и запустите.   
 ```
-./c-style-checker ../test/test.cpp --extra-arg=-I/home/<your-root-name>/compiler-course/llvm-project/llvm/build/lib/clang/<version>include/
+./c-style-cast-checker ../test/test.cpp --extra-arg=-I/home/<your-root-name>/compiler-course/llvm-project/llvm/build/lib/clang/<version>include/
 ```
 
 Если вы все реализовали правильно, то вы увидите на экране
