@@ -23,7 +23,7 @@ public:
         // Your code goes here
     };
 
-    virtual void run(const MatchFinder::MatchResult &Result) {
+    void run(const MatchFinder::MatchResult &Result) override {
         // Your code goes here
     }
 };
@@ -65,8 +65,8 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
 
-    ClangTool tool(parser.getCompilations(), parser.getSourcePathList());
-    return tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
+    ClangTool Tool(parser.getCompilations(), parser.getSourcePathList());
+    return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
 }
