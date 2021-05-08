@@ -7,7 +7,7 @@
 Пользователям linux можно приступать к следующему шагу.
 
 ## Сборка LLVM & CLang
-Находясь в терминале установите следующие зависимости:
+Находясь в терминале, установите следующие зависимости:
 ```
 sudo apt install git cmake 
 ```
@@ -41,7 +41,7 @@ make install
 
 Обратите внимание, что сборка LLVM из исходников потребуется для сдачи дальнейших задач в курсе. Данный `workraround` поможет сдать только текущую задачу.
 
-### Задача
+## Задача
 После успешного построения `LLVM & Clang` можно приступать к выполнению задания.
 
 Вернитесь в корневую папку курса:
@@ -70,13 +70,14 @@ make -j8
 В задаче нужно реализовать с помощью интерфейса clang, `tool`, который будет находить в исходном коде программы все приведения типов в стиле си и заменять их на соответсвующий аналог из с++.
 Пример:
 ```
-double d = 4.5
+double d = 4.5;
 int i = (int)d; // int i = static_cast<int>(d);
 ```
 
-Для замены исходного кода программы будем пользоваться классом [Rewriter](https://clang.llvm.org/doxygen/classclang_1_1Rewriter.html)
+Для замены исходного кода программы будем пользоваться классом [Rewriter](https://clang.llvm.org/doxygen/classclang_1_1Rewriter.html).
 
-Вам нужно будет дописать код в класс `CastCallBack`, отвечающий за действие, которое нужно совершить при нахождении узла `cStyleCastExpr` в `AST`.  В данном случае мы хотим понять тип преобразования и заменить исходный код с помощью `Rewriter`.
+Вам нужно будет дописать код в класс `CastCallBack`, отвечающий за действие, которое нужно совершить при нахождении узла `cStyleCastExpr` в `AST`.  
+В данном случае мы хотим понять тип преобразования и заменить исходный код с помощью `Rewriter`.
 ```
 class CastCallBack : public MatchFinder::MatchCallback {
 public:
@@ -84,16 +85,15 @@ public:
 		// Your code goes here
 	}
 
-	virtual void run(const MatchFinder::MatchResult &Result) {
+	void run(const MatchFinder::MatchResult &Result) override {
 		// Your code goes here
 	}
 };
 ```
-Подробнее о том как достать всю необходимую информацию из `MatchFinder::MatchResult` можно посмотреть в файле tool.cpp.
 
 После того как вы реализуете `CastCallBack`, пересоберите проект и запустите.   
 ```
-./c-style-cast-checker ../test/test.cpp --extra-arg=-I/home/<your-root-name>/compiler-course/llvm-project/llvm/build/lib/clang/<version>include/
+./c-style-cast-checker ../test/test.cpp --extra-arg=-I/home/<your-root-name>/compiler-course/llvm-project/llvm/build/lib/clang/<version>/include/
 ```
 
 Если вы все реализовали правильно, то вы увидите на экране:
@@ -124,6 +124,8 @@ int main() {
 
 
 ### Полезные ссылки
+* [Понимание Clang AST](https://jonasdevlieghere.com/understanding-the-clang-ast/)
+* [Руководство по созданию инструментов с использованием LibTooling и LibASTMatchers](https://clang.llvm.org/docs/LibASTMatchersTutorial.html)
 * [Усложненная реализация данной задачи](https://github.com/llvm-mirror/clang-tools-extra/blob/master/clang-tidy/google/AvoidCStyleCastsCheck.cpp)
 * [Матчеры которые есть в clang](https://clang.llvm.org/docs/LibASTMatchersReference.html)
 * [Сборка LLVM](https://llvm.org/docs/CMake.html)
