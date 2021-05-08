@@ -106,7 +106,7 @@ int main() {
 }
 ```
 
-### Отправка решения
+## Отправка решения
 После того как вы сделали заданиe:
 1. Сделайте коммит:
     ```
@@ -123,7 +123,7 @@ int main() {
 Не нужно открывать новый `pull request`.
 
 
-### Полезные ссылки
+## Полезные ссылки
 * [Понимание Clang AST](https://jonasdevlieghere.com/understanding-the-clang-ast/)
 * [Руководство по созданию инструментов с использованием LibTooling и LibASTMatchers](https://clang.llvm.org/docs/LibASTMatchersTutorial.html)
 * [Усложненная реализация данной задачи](https://github.com/llvm-mirror/clang-tools-extra/blob/master/clang-tidy/google/AvoidCStyleCastsCheck.cpp)
