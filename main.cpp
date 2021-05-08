@@ -47,6 +47,7 @@ private:
 class CStyleCheckerFrontendAction : public ASTFrontendAction {
 public:
     CStyleCheckerFrontendAction() = default;
+    
     void EndSourceFileAction() override {
         rewriter_.getEditBuffer(rewriter_.getSourceMgr().getMainFileID())
             .write(llvm::outs());
@@ -66,6 +67,6 @@ static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 int main(int argc, const char **argv) {
     auto parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
 
-    ClangTool Tool(parser.getCompilations(), parser.getSourcePathList());
-    return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
+    ClangTool tool(parser.getCompilations(), parser.getSourcePathList());
+    return tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
 }
