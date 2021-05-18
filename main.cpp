@@ -24,25 +24,19 @@ public:
 
     void run(const MatchFinder::MatchResult &Result) override {
         const auto *CastE = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
-
 		SourceManager &SourceMan = *Result.SourceManager;	
-
 		auto RepRange = CharSourceRange::getCharRange (CastE->getLParenLoc(),
 								  CastE->getSubExprAsWritten()->getBeginLoc());
-
 		StringRef DestTypeStr = 
 			Lexer::getSourceText(CharSourceRange::getTokenRange(CastE->getLParenLoc().getLocWithOffset(1),
-										CastE->getRParenLoc().getLocWithOffset(-1)),
-										SourceMan, Result.Context->getLangOpts());
-
+								 CastE->getRParenLoc().getLocWithOffset(-1)),
+								 SourceMan, Result.Context->getLangOpts());
+								 
 		std::string mystr= ("static_cast<" + DestTypeStr + ">").str();
-
 		const Expr *SubE = CastE->getSubExprAsWritten()->IgnoreImpCasts();
-
 		if(!isa<ParenExpr>(SubE)) 
 		{
 			mystr.push_back('(');
-
 			_rewriter.InsertText(Lexer::getLocForEndOfToken(SubE->getEndLoc(),
 								 0,
 								 SourceMan,
