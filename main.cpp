@@ -18,14 +18,31 @@ using namespace clang::ast_matchers;
 using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
-public:
-    CastCallBack(Rewriter& rewriter) {
-        // Your code goes here
-    };
-
-    void run(const MatchFinder::MatchResult &Result) override {
-        // Your code goes here
+  public:
+    CastCallBack(Rewriter& rewriter) : rewriter_(rewriter) {
     }
+
+    virtual void run(const MatchFinder::MatchResult& result) {
+        const CStyleCastExpr* node = result.Nodes.getNodeAs<CStyleCastExpr>("cast");
+        SourceManager& manager = *result.SourceManager;
+        CharSourceRange range =
+            CharSourceRange::getCharRange(node->getLParenLoc(), node->getSubExprAsWritten()->getBeginLoc());
+        StringRef type_name =
+            Lexer::getSourceText(CharSourceRange::getTokenRange(node->getLParenLoc().getLocWithOffset(1),
+                                                                node->getRParenLoc().getLocWithOffset(-1)),
+                                 manager, result.Context->getLangOpts());
+        std::string cast_type = ("static_cast<" + type_name + ">").str();
+        const Expr* expr = node->getSubExprAsWritten()->IgnoreImpCasts();
+        if (!isa<ParenExpr>(expr)) {
+            cast_type.push_back('(');
+            rewriter_.InsertText(
+                Lexer::getLocForEndOfToken(expr->getEndLoc(), 0, manager, result.Context->getLangOpts()), ")");
+        }
+        rewriter_.ReplaceText(range, cast_type);
+    }
+
+  private:
+    Rewriter& rewriter_;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -65,7 +82,7 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
 
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
