@@ -37,8 +37,6 @@ public:
                 expr->getSubExprAsWritten()->IgnoreImpCasts()->getEndLoc(), 0,
                 *Result.SourceManager, Result.Context->getLangOpts());
             rwr.InsertText(closePL, ")");
-        } else {
-            return;
         }
     }
 };
