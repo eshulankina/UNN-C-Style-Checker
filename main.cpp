@@ -19,13 +19,40 @@ using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
 public:
-    CastCallBack(Rewriter& rewriter) {
-        // Your code goes here
-    };
+    CastCallBack(Rewriter& rewriter) : _rewriter(rewriter) {};
 
     void run(const MatchFinder::MatchResult &Result) override {
-        // Your code goes here
-    }
+        const auto* CastExpr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
+
+		if (CastExpr->getExprLoc().isMacroID())
+			return;
+
+		if (CastExpr->getCastKind() == CK_ToVoid)
+			return;
+
+		const auto DestTypeAsWritten = CastExpr->getTypeAsWritten().getUnqualifiedType();
+		const auto SourceTypeAsWritten = CastExpr->getSubExprAsWritten()->getType().getUnqualifiedType();
+		const auto SourceType = SourceTypeAsWritten.getCanonicalType();
+		const auto DestType = DestTypeAsWritten.getCanonicalType();
+
+		auto ReplaceRange = CharSourceRange::getCharRange(
+			CastExpr->getLParenLoc(), CastExpr->getSubExprAsWritten()->getBeginLoc());
+
+		auto& SM = *Result.SourceManager;
+
+		auto DestTypeString = Lexer::getSourceText(CharSourceRange::getTokenRange(
+			CastExpr->getLParenLoc().getLocWithOffset(1), CastExpr->getRParenLoc().getLocWithOffset(-1)),
+			SM, Result.Context->getLangOpts());
+
+		[&](std::string CastText) {
+			const Expr *SubExpr = CastExpr->getSubExprAsWritten()->IgnoreImpCasts();
+			if (!isa<ParenExpr>(SubExpr)) {
+				CastText.push_back('(');
+				_rewriter.InsertText(Lexer::getLocForEndOfToken(SubExpr->getEndLoc(), 0, SM, Result.Context->getLangOpts()),")");
+			}
+			_rewriter.ReplaceText(ReplaceRange, CastText);
+		}(("static_cast<" + DestTypeString + ">").str());
+	}
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -65,7 +92,7 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
 
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
