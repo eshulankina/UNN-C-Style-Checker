@@ -19,13 +19,32 @@ using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
 public:
-    CastCallBack(Rewriter& rewriter) {
-        // Your code goes here
+    CastCallBack(Rewriter& rewriter) : r_rewriter(rewriter) {
     };
 
-    void run(const MatchFinder::MatchResult &Result) override {
-        // Your code goes here
+    void run(const MatchFinder::MatchResult &result) override {
+        const CStyleCastExpr* node = result.Nodes.getNodeAs<CStyleCastExpr>("cast");
+        SourceManager& source_manager = *result.SourceManager;
+        CharSourceRange source_range =
+            CharSourceRange::getCharRange(node->getLParenLoc(), node->getSubExprAsWritten()->getBeginLoc());
+        StringRef type_name =
+            Lexer::getSourceText(CharSourceRange::getTokenRange(node->getLParenLoc().getLocWithOffset(1),
+                                                                node->getRParenLoc().getLocWithOffset(-1)),
+                                 source_manager, result.Context->getLangOpts());
+        std::string cast_type = ("static_cast<" + type_name + ">").str();
+
+        const Expr* expression = node->getSubExprAsWritten()->IgnoreImpCasts();
+        if (!isa<ParenExpr>(expression)) {
+            cast_type.push_back('(');
+            r_rewriter.InsertText(
+                Lexer::getLocForEndOfToken(expression->getEndLoc(), 0, source_manager, result.Context->getLangOpts()), ")");
+        }
+
+        r_rewriter.ReplaceText(source_range, cast_type);
     }
+
+private:
+    Rewriter& r_rewriter;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -65,7 +84,7 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
 
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
