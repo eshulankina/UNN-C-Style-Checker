@@ -18,13 +18,36 @@ using namespace clang::ast_matchers;
 using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
+private:
+  Rewriter& castRewriter;
 public:
-    CastCallBack(Rewriter& rewriter) {
-        // Your code goes here
+    CastCallBack(Rewriter& rewriter) : castRewriter(rewriter) {
     };
 
     void run(const MatchFinder::MatchResult &Result) override {
-        // Your code goes here
+        const auto* expression = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
+    SourceManager& sourceManager = *Result.SourceManager;
+        if (expression->getExprLoc().isMacroID())
+            return;
+        if (expression->getCastKind() == CK_ToVoid)
+            return;
+      
+    auto range = CharSourceRange::getCharRange(expression->getLParenLoc(),
+    expression->getSubExprAsWritten()->getBeginLoc());
+    
+        auto sourceText = Lexer::getSourceText(CharSourceRange::getTokenRange(
+                expression->getLParenLoc().getLocWithOffset(1),
+                expression->getRParenLoc().getLocWithOffset(-1)),
+                sourceManager, Result.Context->getLangOpts());
+        auto replaceText = ("static_cast<" + sourceText + ">").str();
+        auto castIgnore = expression->getSubExprAsWritten()->IgnoreImpCasts();
+        if (!isa<ParenExpr>(castIgnore)) {
+            replaceText.push_back('(');
+            castRewriter.InsertText(Lexer::getLocForEndOfToken(castIgnore->getEndLoc(),
+                0, *Result.SourceManager,
+                Result.Context->getLangOpts()), ")");
+        }
+        castRewriter.ReplaceText(range, replaceText);
     }
 };
 
@@ -65,7 +88,7 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
 
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
