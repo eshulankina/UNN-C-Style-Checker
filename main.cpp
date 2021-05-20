@@ -19,13 +19,40 @@ using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
 public:
-    CastCallBack(Rewriter& rewriter) {
-        // Your code goes here
-    };
+    CastCallBack(Rewriter& rewriter) : rewriter_(rewriter) { };
 
     void run(const MatchFinder::MatchResult &Result) override {
-        // Your code goes here
+        
+        const auto *Item = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
+        SourceManager &SourceM = *Result.SourceManager;
+
+        auto ReRange = CharSourceRange::getCharRange (Item->getLParenLoc(), 
+                                                      Item->getSubExprAsWritten()->getBeginLoc());
+
+        StringRef DestTypeString = 
+                Lexer::getSourceText(CharSourceRange::getTokenRange(Item->getLParenLoc().getLocWithOffset(1),
+                                                                    Item->getRParenLoc().getLocWithOffset(-1)),
+                                                                    SourceM,
+                                                                    Result.Context->getLangOpts());
+
+        std::string str = ("static_cast<" + DestTypeString + ">").str();
+        const Expr *SubExpr = Item->getSubExprAsWritten()->IgnoreImpCasts();
+
+        if(!isa<ParenExpr>(SubExpr)) {
+            str.push_back('(');
+            rewriter_.InsertText(Lexer::getLocForEndOfToken(SubExpr->getEndLoc(),
+                                                            0,
+                                                            SourceM,
+                                                            Result.Context->getLangOpts()),
+                                                            ")");
+        }
+
+        rewriter_.ReplaceText(ReRange, str);
+
     }
+
+private:
+    Rewriter& rewriter_;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -65,7 +92,7 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
 
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
