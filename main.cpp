@@ -18,13 +18,25 @@ using namespace clang::ast_matchers;
 using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
+private:
+	Rewriter& _rewriter;
+
 public:
-    CastCallBack(Rewriter& rewriter) {
-        // Your code goes here
-    };
+    CastCallBack(Rewriter& rewriter) : _rewriter(rewriter) { };
 
     void run(const MatchFinder::MatchResult &Result) override {
-        // Your code goes here
+    	// getting whole node
+        const CStyleCastExpr *cast_node = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
+        // getting type name
+        const std::string cast_type = cast_node->getTypeAsWritten().getAsString();
+        std::string cast_expr("static_cast<" + cast_type + ">");
+        // replace (type) with static_cast<type>
+        _rewriter.ReplaceText(SourceRange(cast_node->getLParenLoc(), cast_node->getRParenLoc()), cast_expr);
+        // check if expression for cast in brakets, if not - add brakets 
+        if (!isa<ParenExpr>(cast_node->getSubExprAsWritten())) {
+		_rewriter.InsertText(cast_node->getSubExpr()->getBeginLoc(), "(");
+		_rewriter.InsertTextAfterToken(cast_node->getSubExpr()->getEndLoc(), ")");
+        }
     }
 };
 
@@ -65,7 +77,7 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
 
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
