@@ -19,7 +19,7 @@ using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
 public:
-    CastCallBack(Rewriter& _rewriter) : rewriter(_rewriter) {};
+    CastCallBack(Rewriter& _rewriter) : rewriter_(_rewriter) {};
 
     void run(const MatchFinder::MatchResult &Result) override {
 
@@ -88,8 +88,7 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
-
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
 }
