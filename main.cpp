@@ -21,28 +21,35 @@ class CastCallBack : public MatchFinder::MatchCallback {
  public:
     CastCallBack(Rewriter& rewriter) : rewriter_(rewriter) {};
 
-    virtual void run(const MatchFinder::MatchResult& Result) {
-	  const auto *CastExpr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
-	  auto &SM = *Result.SourceManager;
+    virtual void run(const MatchFinder::MatchResult &Result) {
+    	if (const auto *Cast_Term = Result.Nodes.getNodeAs<CStyleCastExpr>("cast")) {
+		if (Cast_Term->getCastKind() == CK_ToVoid)
+			return;
+		if (Cast_Term->getExprLoc().isMacroID())
+			return;
 
-	  auto DestTypeString = Lexer::getSourceText(CharSourceRange::getTokenRange(
-                                 CastExpr->getLParenLoc().getLocWithOffset(1),
-                                 CastExpr->getRParenLoc().getLocWithOffset(-1)),
-                                 SM, Result.Context->getLangOpts());
 
-	  auto s = ("static_cast<" + DestTypeString + ">(").str();
-	  auto Range = CharSourceRange::getCharRange(
-			  CastExpr->getLParenLoc(),
-			  CastExpr->getSubExprAsWritten()->getBeginLoc());
+		auto Replace_Range = CharSourceRange::getCharRange(
+				        Cast_Term->getLParenLoc(), Cast_Term->getSubExprAsWritten()->getBeginLoc());
 
-	  rewriter_.ReplaceText(Range, s);
+		StringRef String_Type = Lexer::getSourceText(CharSourceRange::getTokenRange(
+					              	Cast_Term->getLParenLoc().getLocWithOffset(1),
+						        Cast_Term->getRParenLoc().getLocWithOffset(-1)),
+				              		*Result.SourceManager, Result.Context->getLangOpts());
 
-	  const auto *SubExpr = CastExpr->getSubExprAsWritten()->IgnoreImpCasts();
-	  auto EndSubExpr = Lexer::getLocForEndOfToken(SubExpr->getEndLoc(), 0, SM, Result.Context->getLangOpts());
+		std::string Text_Type(("static_cast<" + String_Type + ">").str());
 
- 	  rewriter_.InsertText(EndSubExpr,")");
-    }
-private:
+		const auto *Cast_Ignore = Cast_Term->getSubExprAsWritten()->IgnoreImpCasts();
+
+		if (!isa<ParenExpr>(Cast_Ignore)) {
+			
+			Text_Type.push_back('(');
+			rewriter_.InsertText(Lexer::getLocForEndOfToken(Cast_Ignore->getEndLoc(),
+						   0, *Result.SourceManager, Result.Context->getLangOpts()), ")");
+		}
+			rewriter_.ReplaceText(Replace_Range, Text_Type);
+	}
+ private:
     Rewriter& rewriter_;
 };
 
