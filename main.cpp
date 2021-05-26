@@ -19,7 +19,7 @@ using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
 public:
-    CastCallBack(Rewriter& rewriter) : rewriter1(rewriter)
+    CastCallBack(Rewriter& rewriter) : rewriter_(rewriter)
      {
     };
 
