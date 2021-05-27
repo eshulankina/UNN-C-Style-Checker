@@ -18,26 +18,27 @@ using namespace clang::ast_matchers;
 using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
+    Rewriter& rwr;
 public:
-    CastCallBack(Rewriter& rewriter) rewrite(rewriter) {};
+    CastCallBack(Rewriter& rewriter) : rwr(rewriter) {};
 
     void run(const MatchFinder::MatchResult &Result) override {
         const auto *expr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
-        auto res = ("static_cast<" + tSource + ">(").str();
-        auto loc = CharSourceRange::getCharRange(expr->getLParenLoc(),
-            expr->getSubExprAsWritten()->getBeginLoc());
-        auto tSource = Lexer::getSourceText(CharSourceRange::getTokenRange(
-            expr->getLParenLoc().getLocWithOffset(1),
-            expr->getRParenLoc().getLocWithOffset(-1)), *Result.SourceManager,
-            Result.Context->getLangOpts());
-        rewrite.ReplaceText(loc, res);
-        auto closePL = Lexer::getLocForEndOfToken(
-            expr->getSubExprAsWritten()->IgnoreImpCasts()->getEndLoc(), 0,
-            *Result.SourceManager, Result.Context->getLangOpts());
-        rewrite.InsertText(closePL, ")");
+        if (expr != nullptr) {
+            auto loc = CharSourceRange::getCharRange(expr->getLParenLoc(),
+                expr->getSubExprAsWritten()->getBeginLoc());
+            auto tSource = Lexer::getSourceText(CharSourceRange::getTokenRange(
+                expr->getLParenLoc().getLocWithOffset(1),
+                expr->getRParenLoc().getLocWithOffset(-1)), *Result.SourceManager,
+                Result.Context->getLangOpts());
+            auto res = ("static_cast<" + tSource + ">(").str();
+            rwr.ReplaceText(loc, res);
+            auto closePL = Lexer::getLocForEndOfToken(
+                expr->getSubExprAsWritten()->IgnoreImpCasts()->getEndLoc(), 0,
+                *Result.SourceManager, Result.Context->getLangOpts());
+            rwr.InsertText(closePL, ")");
+        }
     }
-private:
-    Rewriter& rewrite;
 };
 
 class MyASTConsumer : public ASTConsumer {
