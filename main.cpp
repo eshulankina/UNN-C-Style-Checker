@@ -26,6 +26,8 @@ public:
     void run(const MatchFinder::MatchResult &Result) override {
         // My code goes here
         const auto *CastExpr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
+        if (CastExpr == nullptr)
+            return;
         auto ReplaceRange = CharSourceRange::getCharRange(CastExpr->getLParenLoc(),
                 CastExpr->getSubExprAsWritten()->getBeginLoc());
         SourceManager &SM = *Result.SourceManager;
