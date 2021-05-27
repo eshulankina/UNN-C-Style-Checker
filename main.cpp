@@ -25,20 +25,22 @@ class CastCallBack : public MatchFinder::MatchCallback {
     CastCallBack(Rewriter& rewriter) : tool(rewriter) {};
     void run(const MatchFinder::MatchResult &Result) override {
         const auto* node_ = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
-        auto range_ch = CharSourceRange::getCharRange(node_->getLParenLoc(),
-        node_->getSubExprAsWritten()->getBeginLoc());
+        if (node_ != nullptr) {
+        	auto range_ch = CharSourceRange::getCharRange(node_->getLParenLoc(),
+        	node_->getSubExprAsWritten()->getBeginLoc());
 
-        StringRef type_ch = Lexer::getSourceText(CharSourceRange::getTokenRange(
-        node_->getLParenLoc().getLocWithOffset(1),
-        node_->getRParenLoc().getLocWithOffset(-1)),
-        *Result.SourceManager, Result.Context->getLangOpts());
+        	StringRef type_ch = Lexer::getSourceText(CharSourceRange::getTokenRange(
+        	node_->getLParenLoc().getLocWithOffset(1),
+        	node_->getRParenLoc().getLocWithOffset(-1)),
+        	*Result.SourceManager, Result.Context->getLangOpts());
 
-        std::string changed = ("static_cast<" + type_ch + ">").str();
-        if (!isa<ParenExpr>(node_->getSubExprAsWritten())) {
-            changed.push_back('(');
-            tool.InsertText(Lexer::getLocForEndOfToken(node_->getSubExprAsWritten()->getEndLoc(), 0, *Result.SourceManager, Result.Context->getLangOpts()), ")");
-        }
+        	std::string changed = ("static_cast<" + type_ch + ">").str();
+        	if (!isa<ParenExpr>(node_->getSubExprAsWritten())) {
+            	changed.push_back('(');
+            	tool.InsertText(Lexer::getLocForEndOfToken(node_->getSubExprAsWritten()->getEndLoc(), 0, *Result.SourceManager, Result.Context->getLangOpts()), ")");
+        	}
         tool.ReplaceText(range_ch, changed);
+	}
     }
 };
 
