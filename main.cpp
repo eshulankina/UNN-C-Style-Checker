@@ -30,8 +30,9 @@ public:
         SourceManager& SM = *Result.SourceManager;
         auto Range = CharSourceRange::getCharRange(CastExpr->getLParenLoc(), CastExpr->getSubExprAsWritten()->getBeginLoc());
         StringRef DestTypeString = Lexer::getSourceText(CharSourceRange::getTokenRange(CastExpr->getLParenLoc().getLocWithOffset(1), CastExpr->getRParenLoc().getLocWithOffset(-1)), SM, Result.Context->getLangOpts());
-        std::string CastText(("static_cast<" + DestTypeString + ">").str());
+        std::string CastText(("static_cast<" + DestTypeString + ">"+"(").str());
         rewriter_.ReplaceText(Range, CastText);
+        rewriter_.InsertText(CastExpr->getEndLoc().getLocWithOffset(1), ")");
     }
 private:
     Rewriter& rewriter_;
