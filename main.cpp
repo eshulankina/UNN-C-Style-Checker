@@ -21,7 +21,7 @@ class CastCallBack : public MatchFinder::MatchCallback {
  public:
     CastCallBack(Rewriter& rewriter) {
         rewriter_ = &rewriter;
-    };
+    }
 
     virtual void run(const MatchFinder::MatchResult &Result) {
         SourceManager &SM = *Result.SourceManager;
@@ -29,14 +29,15 @@ class CastCallBack : public MatchFinder::MatchCallback {
         SourceLocation begin_loc = cast_expr->getBeginLoc();
         SourceLocation end_loc = cast_expr->getEndLoc();
 
-        rewriter_->RemoveText(begin_loc, 1);
+        // rewriter_->RemoveText(begin_loc, 1);
         rewriter_->RemoveText(end_loc.getLocWithOffset(-1), 1);
-        rewriter_->InsertText(begin_loc, "static_cast<");
-        rewriter_->InsertText(end_loc, ">(");
+        // rewriter_->InsertText(begin_loc, "static_cast<");
+        // rewriter_->InsertText(end_loc, ">(");
+		rewriter_->InsertText(end_loc, ")");
 
         const Expr *sub_exp =cast_expr->getSubExprAsWritten();
         rewriter_->InsertText(Lexer::getLocForEndOfToken(sub_exp->getEndLoc(),
-            0, SM, LangOptions()), ")");
+            0, SM, LangOptions()), " ");
     }
 
  private:
