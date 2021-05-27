@@ -28,12 +28,10 @@ public:
         const CStyleCastExpr *cast_expr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
         SourceLocation begin_loc = cast_expr->getBeginLoc();
 	SourceLocation end_loc = cast_expr->getEndLoc();
-        rewriter_->RemoveText(begin_loc, 1);
 	rewriter_->RemoveText(end_loc.getLocWithOffset(-1), 1);
-	rewriter_->InsertText(begin_loc, "static_cast<");
-	rewriter_->InsertText(end_loc, ">(");
+	rewriter_->InsertText(end_loc, "  )  ");
         const Expr *sub_exp =cast_expr->getSubExprAsWritten();
-	rewriter_->InsertText(Lexer::getLocForEndOfToken(sub_exp->getEndLoc(),0, SM, LangOptions()), ")");
+	rewriter_->InsertText(Lexer::getLocForEndOfToken(sub_exp->getEndLoc(),0, SM, LangOptions()), " ");
     }
 private:
     Rewriter* rewriter_;
