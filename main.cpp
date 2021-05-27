@@ -18,12 +18,14 @@ using namespace clang::ast_matchers;
 using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
+private:
+    Rewriter& rewriter_;
 public:
-    CastCallBack(Rewriter& rewriter) {
-        CastCallBack(Rewriter& rewriter) : rewriter_(rewriter) {};
+    CastCallBack(Rewriter& rewriter): rewriter_(rewriter) {
+        
     };
 
-    void run(const MatchFinder::MatchResult &Result) override {
+    virtual void run(const MatchFinder::MatchResult &Result) {
         auto* CastExpr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
         SourceManager &SM = *Result.SourceManager;
         if (CastExpr->getExprLoc().isMacroID())
