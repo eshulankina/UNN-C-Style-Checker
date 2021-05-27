@@ -20,7 +20,7 @@ using namespace clang::tooling;
 class CastCallBack : public MatchFinder::MatchCallback {
 	Rewriter& rewrite;
 public:
-    CastCallBack(Rewriter& rewriter) rewrite(rewriter) {};
+    CastCallBack(Rewriter& rewriter) : rewrite(rewriter) {};
 
     void run(const MatchFinder::MatchResult &Result) override {
         const auto *expr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
