@@ -26,8 +26,9 @@ public:
     	auto range = CharSourceRange::getCharRange(c_expr->getLParenLoc(), c_expr->getSubExprAsWritten()->getBeginLoc());
 	auto stext = Lexer::getSourceText(CharSourceRange::getTokenRange(c_expr->getLParenLoc().getLocWithOffset(1), c_expr->getRParenLoc().getLocWithOffset(-1)),
 	*Result.SourceManager, Result.Context->getLangOpts());
-	std::string ctext(("static_cast<" + stext + ">").str());
+	std::string ctext(("static_cast<" + stext + ">"+"(").str());
 	rewriter_.ReplaceText(range, ctext);
+	rewriter_.InsertText(c_expr->getEndLoc().getLocWithOffset(1),")");
     }
 private:
     Rewriter& rewriter_;
