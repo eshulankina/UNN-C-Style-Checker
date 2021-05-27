@@ -19,12 +19,42 @@ using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
 public:
-    CastCallBack(Rewriter& rewriter) {
-        // Your code goes here
-    };
+    CastCallBack(Rewriter& rewriter) : rewriter_(rewriter) {
 
-    void run(const MatchFinder::MatchResult &Result) override {
-        // Your code goes here
+	        };
+private:
+        Rewriter& rewriter_;
+public:   
+    virtual void run(const MatchFinder::MatchResult &Result) {
+        if (const auto *CastT = Result.Nodes.getNodeAs<CStyleCastExpr>("cast")) {
+            if (CastT->getExprLoc().isMacroID())
+                return;
+
+            if (CastT->getCastKind() == CK_ToVoid)
+    	        return;
+
+            StringRef StringT = Lexer::getSourceText(CharSourceRange::getTokenRange(
+	    		    CastT->getLParenLoc().getLocWithOffset(1),
+			    CastT->getRParenLoc().getLocWithOffset(-1)),
+		            *Result.SourceManager, Result.Context->getLangOpts());
+
+	    std::string TextT(("static_cast<" + StringT + ">").str());
+
+	    const auto* CastIgn = CastT->getSubExprAsWritten()->IgnoreImpCasts();
+
+	    if (!isa<ParenExpr>(CastIgn)) {
+
+		    TextT.push_back('(');
+		    rewriter_.InsertText(Lexer::getLocForEndOfToken(CastIgn->getEndLoc(),
+			    0, *Result.SourceManager, Result.Context->getLangOpts()), ")");
+
+	    }
+
+	    auto ReplaceR = CharSourceRange::getCharRange(
+			                    CastT->getLParenLoc(), CastT->getSubExprAsWritten()->getBeginLoc());
+
+	    rewriter_.ReplaceText(ReplaceR, TextT);
+        }
     }
 };
 
@@ -65,8 +95,9 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
 
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
+
 }
