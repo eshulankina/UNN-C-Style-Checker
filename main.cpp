@@ -18,26 +18,28 @@ using namespace clang::ast_matchers;
 using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
- public:
+public:
     CastCallBack(Rewriter& rewriter) : rewriter_(rewriter) {
-		
+        
     };
 
     void run(const MatchFinder::MatchResult &Result) override {
-        if (const auto *cast_expr = Result.Nodes.getNodeAs<clang::CStyleCastExpr>("cast")) {
-			const auto& SM = *Result.SourceManager;
-			const auto& Begin_loc = cast_expr->getLParenLoc();
-			const auto& End_loc = cast_expr->getRParenLoc();
-			rewriter_.getEditBuffer(rewriter_.getSourceMgr().getMainFileID())
+        if (const auto *cast_expr =
+                Result.Nodes.getNodeAs<clang::CStyleCastExpr>("cast")) {
+            const auto& SM = *Result.SourceManager;
+            const auto& Begin_Loc = cast_expr->getLParenLoc();
+            const auto& End_Loc = cast_expr->getRParenLoc();
+            rewriter_.getEditBuffer(rewriter_.getSourceMgr().getMainFileID())
                 .ReplaceText(SM.getFileOffset(Begin_Loc), 1, "static_cast<");
             rewriter_.getEditBuffer(rewriter_.getSourceMgr().getMainFileID())
                 .ReplaceText(SM.getFileOffset(End_Loc), 1, ">");
-			rewriter_.InsertTextBefore(F->getSubExpr()->getBeginLoc(), "(");
-			rewriter_.InsertTextAfterToken(F->getSubExpr()->getEndLoc(), ")");
-		{
+
+            rewriter_.InsertTextBefore(cast_expr->getSubExpr()->getBeginLoc(), "(");
+            rewriter_.InsertTextAfterToken(cast_expr->getSubExpr()->getEndLoc(), ")");
+        }
     }
 
- private:
+private:
     Rewriter& rewriter_;
 };
 
