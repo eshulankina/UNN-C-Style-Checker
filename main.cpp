@@ -19,13 +19,28 @@ using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
 public:
-    CastCallBack(Rewriter& rewriter) {
-        // Your code goes here
+    CastCallBack(Rewriter& rewriter) : rewriter_(rewriter) {
+        
     };
 
     void run(const MatchFinder::MatchResult &Result) override {
-        // Your code goes here
+        if (const auto *cast_expr =
+                Result.Nodes.getNodeAs<clang::CStyleCastExpr>("cast")) {
+            const auto& SM = *Result.SourceManager;
+            const auto& Begin_Loc = cast_expr->getLParenLoc();
+            const auto& End_Loc = cast_expr->getRParenLoc();
+            rewriter_.getEditBuffer(rewriter_.getSourceMgr().getMainFileID())
+                .ReplaceText(SM.getFileOffset(Begin_Loc), 1, "static_cast<");
+            rewriter_.getEditBuffer(rewriter_.getSourceMgr().getMainFileID())
+                .ReplaceText(SM.getFileOffset(End_Loc), 1, ">");
+
+            rewriter_.InsertTextBefore(cast_expr->getSubExpr()->getBeginLoc(), "(");
+            rewriter_.InsertTextAfterToken(cast_expr->getSubExpr()->getEndLoc(), ")");
+        }
     }
+
+private:
+    Rewriter& rewriter_;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -65,7 +80,7 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
 
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
