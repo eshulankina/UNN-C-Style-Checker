@@ -18,14 +18,38 @@ using namespace clang::ast_matchers;
 using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
+    
 public:
-    CastCallBack(Rewriter& rewriter) {
-        // Your code goes here
+    CastCallBack(Rewriter& rewriter) : _rewriter(rewriter){
     };
 
-    void run(const MatchFinder::MatchResult &Result) override {
-        // Your code goes here
+    virtual void run(const MatchFinder::MatchResult &Result) override {
+        auto* CastExpr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
+        SourceManager &SM = *Result.SourceManager;
+        if (CastExpr->getExprLoc().isMacroID())
+            return;
+        if (CastExpr->getCastKind() == CK_ToVoid)
+            return;
+        if (SM.getFilename(SM.getSpellingLoc(CastExpr->getBeginLoc())).endswith(".c"))
+            return;
+        StringRef DestTypeString =
+            Lexer::getSourceText(CharSourceRange::getTokenRange(
+                CastExpr->getLParenLoc().getLocWithOffset(1),
+                CastExpr->getRParenLoc().getLocWithOffset(-1)),
+                SM, Result.Context->getLangOpts());
+        std::string replaceText = ("static_cast<" + DestTypeString + ">").str();
+        auto ReplaceRange = CharSourceRange::getCharRange(
+            CastExpr->getLParenLoc(), CastExpr->getSubExprAsWritten()->getBeginLoc());
+        auto castIgnore = CastExpr->getSubExprAsWritten()->IgnoreImpCasts();
+        if (!isa<ParenExpr>(castIgnore)) {
+            replaceText.push_back('(');
+            _rewriter.InsertText(Lexer::getLocForEndOfToken(castIgnore->getEndLoc(),
+                0, *Result.SourceManager, Result.Context->getLangOpts()), ")");
+        }
+        _rewriter.ReplaceText(ReplaceRange, replaceText);
     }
+private:
+    Rewriter& _rewriter;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -49,23 +73,23 @@ public:
     CStyleCheckerFrontendAction() = default;
     
     void EndSourceFileAction() override {
-        rewriter_.getEditBuffer(rewriter_.getSourceMgr().getMainFileID())
+        _rewriter.getEditBuffer(_rewriter.getSourceMgr().getMainFileID())
             .write(llvm::outs());
     }
 
     std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI, StringRef /* file */) override {
-        rewriter_.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
-        return std::make_unique<MyASTConsumer>(rewriter_);
+        _rewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
+        return std::make_unique<MyASTConsumer>(_rewriter);
     }
 
 private:
-    Rewriter rewriter_;
+    Rewriter _rewriter;
 };
 
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
 
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
