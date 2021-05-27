@@ -24,35 +24,27 @@ public:
     void run(const MatchFinder::MatchResult &Result) override {
         const auto* CastExpr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
 
-        if (CastExpr->getExprLoc().isMacroID())
-            return;
-
-        if (CastExpr->getCastKind() == CK_ToVoid)
-            return;
-
-        const auto DestTypeAsWritten = CastExpr->getTypeAsWritten().getUnqualifiedType();
-        const auto SourceTypeAsWritten = CastExpr->getSubExprAsWritten()->getType().getUnqualifiedType();
-        const auto SourceType = SourceTypeAsWritten.getCanonicalType();
-        const auto DestType = DestTypeAsWritten.getCanonicalType();
-
         auto ReplaceRange = CharSourceRange::getCharRange(
             CastExpr->getLParenLoc(), CastExpr->getSubExprAsWritten()->getBeginLoc());
 
         auto& SM = *Result.SourceManager;
 
         auto DestTypeString = Lexer::getSourceText(CharSourceRange::getTokenRange(
-            CastExpr->getLParenLoc().getLocWithOffset(1), CastExpr->getRParenLoc().getLocWithOffset(-1)),
+            CastExpr->getLParenLoc().getLocWithOffset(1), 
+            CastExpr->getRParenLoc().getLocWithOffset(-1)),
             SM, Result.Context->getLangOpts());
 
-        [&](std::string CastText) {
-            const Expr *SubExpr = CastExpr->getSubExprAsWritten()->IgnoreImpCasts();
-            if (!isa<ParenExpr>(SubExpr)) {
-                CastText.push_back('(');
-                _rewriter.InsertText(Lexer::getLocForEndOfToken(SubExpr->getEndLoc(), 0, SM, Result.Context->getLangOpts()),")");
-            }
-            _rewriter.ReplaceText(ReplaceRange, CastText);
-        }(("static_cast<" + DestTypeString + ">").str());
+        const Expr* SubExpr = CastExpr->getSubExprAsWritten();
+
+        std::string CastReplaceText = ("static_cast<" + DestTypeString + ">(").str();
+        
+        _rewriter.InsertText(Lexer::getLocForEndOfToken(SubExpr->getEndLoc(),
+                0, *Result.SourceManager, Result.Context->getLangOpts()), ")");
+
+        _rewriter.ReplaceText(ReplaceRange, CastReplaceText);
     }
+ private:
+    Rewriter& _rewriter;
 };
 
 class MyASTConsumer : public ASTConsumer {
