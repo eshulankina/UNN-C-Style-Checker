@@ -42,7 +42,7 @@ class CastCallBack : public MatchFinder::MatchCallback {
 						   0, *Result.SourceManager, Result.Context->getLangOpts()), ")");
 		}
 			rewriter_.ReplaceText(Replace_Range, Text_Type);
-	}
+        }
     }
  private:
     Rewriter& rewriter_;
