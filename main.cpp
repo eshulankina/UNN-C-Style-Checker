@@ -18,14 +18,34 @@ using namespace clang::ast_matchers;
 using namespace clang::tooling;
 
 class CastCallBack : public MatchFinder::MatchCallback {
-public:
-    CastCallBack(Rewriter& rewriter) {
-        // Your code goes here
-    };
+ public:
+    CastCallBack(Rewriter& rewriter) : rewriter_(rewriter) {};
 
     void run(const MatchFinder::MatchResult &Result) override {
-        // Your code goes here
+    	if (const auto *Cast_Term = Result.Nodes.getNodeAs<CStyleCastExpr>("cast")) {
+		if (Cast_Term->getCastKind() == CK_ToVoid)
+			return;
+		if (Cast_Term->getExprLoc().isMacroID())
+			return;
+		
+		auto Replace_Range = CharSourceRange::getCharRange(
+				        Cast_Term->getLParenLoc(), Cast_Term->getSubExprAsWritten()->getBeginLoc());
+		StringRef String_Type = Lexer::getSourceText(CharSourceRange::getTokenRange(
+					              	Cast_Term->getLParenLoc().getLocWithOffset(1),
+						        Cast_Term->getRParenLoc().getLocWithOffset(-1)),
+				              		*Result.SourceManager, Result.Context->getLangOpts());
+		std::string Text_Type(("static_cast<" + String_Type + ">").str());
+		const auto *Cast_Ignore = Cast_Term->getSubExprAsWritten()->IgnoreImpCasts();
+		if (!isa<ParenExpr>(Cast_Ignore)) {	
+			Text_Type.push_back('(');
+			rewriter_.InsertText(Lexer::getLocForEndOfToken(Cast_Ignore->getEndLoc(),
+						   0, *Result.SourceManager, Result.Context->getLangOpts()), ")");
+		}
+			rewriter_.ReplaceText(Replace_Range, Text_Type);
+        }
     }
+ private:
+    Rewriter& rewriter_;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -65,7 +85,7 @@ private:
 static llvm::cl::OptionCategory CastMatcherCategory("cast-matcher options");
 
 int main(int argc, const char **argv) {
-    auto Parser = llvm::ExitOnError()(CommonOptionsParser::create(argc, argv, CastMatcherCategory));
+    CommonOptionsParser Parser(argc, argv, CastMatcherCategory);
 
     ClangTool Tool(Parser.getCompilations(), Parser.getSourcePathList());
     return Tool.run(newFrontendActionFactory<CStyleCheckerFrontendAction>().get());
