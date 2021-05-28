@@ -29,7 +29,7 @@ public:
         SourceLocation begin_loc = cast_expr->getBeginLoc();
 	SourceLocation end_loc = cast_expr->getEndLoc();
 	rewriter_->RemoveText(end_loc.getLocWithOffset(-1), 1);
-	rewriter_->InsertText(end_loc, "  )  ");
+	rewriter_->InsertText(end_loc, "   )   )  ");
         const Expr *sub_exp =cast_expr->getSubExprAsWritten();
 	rewriter_->InsertText(Lexer::getLocForEndOfToken(sub_exp->getEndLoc(),0, SM, LangOptions()), " ");
     }
