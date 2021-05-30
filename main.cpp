@@ -24,14 +24,16 @@ public:
     };
 
     void run(const MatchFinder::MatchResult &Result) override {
-        SourceManager &SM = *Result.SourceManager;
-        const CStyleCastExpr *cast_expr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
-        SourceLocation begin_loc = cast_expr->getBeginLoc();
-	SourceLocation end_loc = cast_expr->getEndLoc();
-	rewriter_->RemoveText(end_loc.getLocWithOffset(-1), 1);
-	rewriter_->InsertText(end_loc, "   )   )  ");
-        const Expr *sub_exp =cast_expr->getSubExprAsWritten();
-	rewriter_->InsertText(Lexer::getLocForEndOfToken(sub_exp->getEndLoc(),0, SM, LangOptions()), " ");
+        const CStyleCastExpr* cast_expr = Result.Nodes.getNodeAs<CStyleCastExpr>("cast");
+	SourceManager& SM = *Result.SourceManager;
+	auto str = Lexer::getSourceText(CharSourceRange::getTokenRange(cast_expr->getLParenLoc().getLocWithOffset(1), 
+				                   cast_expr->getRParenLoc().getLocWithOffset(-1)), SM, Result.Context->getLangOpts());
+	CharSourceRange range = CharSourceRange::getCharRange(cast_expr->getLParenLoc(),cast_expr->getSubExprAsWritten()->getBeginLoc());
+	auto res = ("static_cast<" + str + ">(").str();
+        rewriter_->ReplaceText(range, res);
+       	const Expr *sub_exp = cast_expr->getSubExprAsWritten()->IgnoreImpCasts();
+        auto ans = Lexer::getLocForEndOfToken(sub_exp->getEndLoc(), 0, SM, Result.Context->getLangOpts());
+	rewriter_->InsertText(ans,")");
     }
 private:
     Rewriter* rewriter_;
